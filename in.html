@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>サンプル：</title>
+  <style>
+    :root{ --bg:#e6f4ff; --ink:#0b4a8b; }
+    html,body{margin:0;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,sans-serif}
+    .wrap{max-width:800px;margin:0 auto;padding:16px}
+    .card{background:#fff;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.06);padding:12px}
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .btn{appearance:none;border:1px solid var(--ink);background:var(--bg);color:var(--ink);border-radius:9999px;padding:8px 12px;cursor:pointer}
+    .embed{margin-top:12px}
+    .embed[hidden]{display:none}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>サンプル</h1>
+
+    <!--店舗 -->
+    <section class="card" id="shop-with-ig">
+      <div class="row">
+        <strong>店名</strong>
+        <button class="btn" data-ig-toggle data-ig-url="https://www.instagram.com/p/DNpseHlx38r/?utm_source=ig_web_button_share_sheet">Instagramを表示</button>
+      </div>
+      <div class="embed" hidden></div>
+    </section>
+
+    <!-- 店舗× -->
+    <section class="card" id="shop-no-ig" style="margin-top:12px">
+      <div class="row">
+        <strong>店名</strong>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    let igScriptLoaded = false;
+    function ensureIGScript(){
+      if(igScriptLoaded) return Promise.resolve();
+      return new Promise((resolve)=>{
+        const s = document.createElement('script');
+        s.async = true; s.src = 'https://www.instagram.com/embed.js';
+        s.onload = ()=>{ igScriptLoaded = true; resolve(); };
+        document.body.appendChild(s);
+      });
+    }
+
+    async function toggleIGEmbed(btn){
+      const url = btn.getAttribute('data-ig-url');
+      if(!url) return; 
+      const card = btn.closest('.card');
+      const wrap = card.querySelector('.embed');
+      if(wrap.hidden){
+        wrap.hidden = false;
+        wrap.innerHTML = '';
+        const bq = document.createElement('blockquote');
+        bq.className = 'instagram-media';
+        bq.setAttribute('data-instgrm-permalink', url);
+        bq.setAttribute('data-instgrm-version', '14');
+        bq.style.margin = '0 auto'; bq.style.maxWidth = '540px'; bq.style.width = '100%';
+        wrap.appendChild(bq);
+        btn.textContent = '閉じる';
+        await ensureIGScript();
+        if(window.instgrm && window.instgrm.Embeds) window.instgrm.Embeds.process();
+      } else {
+        wrap.hidden = true;
+        wrap.innerHTML = '';
+        btn.textContent = '表示';
+      }
+    }
+
+    document.querySelectorAll('[data-ig-toggle]').forEach(btn=>{
+      const hasUrl = !!btn.getAttribute('data-ig-url');
+      if(!hasUrl){ btn.remove(); return; }
+      btn.addEventListener('click', ()=> toggleIGEmbed(btn));
+    });
+  </script>
+</body>
+</html>
