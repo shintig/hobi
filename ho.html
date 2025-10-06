@@ -309,11 +309,12 @@ function toggleXEmbed(card, permalink, button){
 
     const url = normalizeXUrl(permalink || '');
 
-    if (url.includes('/status/')) {
-      wrap.innerHTML = `<blockquote class="twitter-tweet"><a href="${url}"></a></blockquote>`;
-    } else {
-      wrap.innerHTML = `<a class="twitter-timeline" data-height="520" data-chrome="noheader nofooter noborders" href="${url}"></a>`;
-    }
+    wrap.innerHTML = `
+      <a class="twitter-timeline"
+         data-height="520"
+         data-chrome="noheader nofooter noborders"
+         data-lang="ja"
+         href="${url}"></a>`;
 
     titleRow && titleRow.insertAdjacentElement('afterend', wrap);
 
