@@ -262,9 +262,16 @@ function ensureIGScript(){
   document.body.appendChild(s);
 }
 function ensureXScript(){
-  if(window.twttr && window.twttr.widgets) return;
-  const s=document.createElement('script'); s.async=true; s.src='https://platform.twitter.com/widgets.js';
-  s.onload=()=>{ window.twttr && window.twttr.widgets && window.twttr.widgets.load(); };
+  if (window.twttr && window.twttr.widgets) {
+    window.twttr.widgets.load();
+    return;
+  }
+  const s = document.createElement('script');
+  s.async = true;
+  s.src = 'https://platform.twitter.com/widgets.js';
+  s.onload = () => {
+    if (window.twttr && window.twttr.widgets) window.twttr.widgets.load();
+  };
   document.body.appendChild(s);
 }
 function toggleIGEmbed(card, permalink, button){
@@ -286,17 +293,41 @@ function toggleIGEmbed(card, permalink, button){
   }
 }
 function toggleXEmbed(card, permalink, button){
-  let wrap=card.querySelector('.x-embed');
+  let wrap = card.querySelector('.x-embed');
   if(!wrap){
-    const titleRow=card.querySelector('.card-body .title-row');
-    wrap=document.createElement('div'); wrap.className='x-embed ig-embed';
-    wrap.innerHTML = `<blockquote class="twitter-tweet"><a href="${permalink}"></a></blockquote>`;
+    const titleRow = card.querySelector('.card-body .title-row');
+    wrap = document.createElement('div');
+    wrap.className = 'x-embed ig-embed';
+
+    const url = normalizeXUrl(permalink || '');
+
+    if (url.includes('/status/')) {
+      wrap.innerHTML = `<blockquote class="twitter-tweet"><a href="${url}"></a></blockquote>`;
+    } else {
+      wrap.innerHTML = `<a class="twitter-timeline" data-height="520" data-chrome="noheader nofooter noborders" href="${url}"></a>`;
+    }
+
     titleRow && titleRow.insertAdjacentElement('afterend', wrap);
+
     ensureXScript();
-    if(button){ button.title='Xを閉じる'; button.setAttribute('aria-label','Xを閉じる'); button.classList.add('open'); button.setAttribute('aria-expanded','true'); }
+    if (window.twttr && window.twttr.widgets) {
+      window.twttr.widgets.load(wrap);
+    }
+
+    if(button){
+      button.title='Xを閉じる';
+      button.setAttribute('aria-label','Xを閉じる');
+      button.classList.add('open');
+      button.setAttribute('aria-expanded','true');
+    }
   } else {
     wrap.remove();
-    if(button){ button.title='Xを表示'; button.setAttribute('aria-label','Xを表示'); button.classList.remove('open'); button.setAttribute('aria-expanded','false'); }
+    if(button){
+      button.title='Xを表示';
+      button.setAttribute('aria-label','Xを表示');
+      button.classList.remove('open');
+      button.setAttribute('aria-expanded','false');
+    }
   }
 }
 
