@@ -274,6 +274,14 @@ function ensureXScript(){
   };
   document.body.appendChild(s);
 }
+
+function normalizeXUrl(u){
+  try{
+    const url = new URL(u);
+    if (url.hostname.endsWith('x.com')) url.hostname = 'twitter.com';
+    return url.toString();
+  }catch{ return u; }
+}
 function toggleIGEmbed(card, permalink, button){
   let wrap=card.querySelector('.ig-embed');
   if(!wrap){
