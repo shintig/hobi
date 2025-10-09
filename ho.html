@@ -277,67 +277,6 @@ function ensureIGScript(){
 }
 let xScriptLoading = false;
 
-function normalizeXUrl(u){
-  try{
-    const url = new URL(u);
-    if (url.hostname.endsWith('x.com')) url.hostname = 'twitter.com';
-    return url.toString();
-  }catch{ return u; }
-}
-
-const XTimelineManager = (() => {
-  let loading = false;
-  let lastTs = 0;
-  const RATE_MS = 4000;
-  const perCardFlag = new WeakMap();
-
-  function ensureWidgets(cb){
-    if (window.twttr && window.twttr.widgets) { cb(); return; }
-    if (loading) { 
-      const id = setInterval(() => {
-        if (window.twttr && window.twttr.widgets) { clearInterval(id); cb(); }
-      }, 200);
-      return;
-    }
-    loading = true;
-    const s = document.createElement('script');
-    s.async = true;
-    s.src = 'https://platform.twitter.com/widgets.js';
-    s.onload = () => { loading = false; cb(); };
-    document.body.appendChild(s);
-  }
-
-  function extractScreenName(urlStr){
-    try{
-      const url = new URL(urlStr);
-      if (!/twitter\.com$/.test(url.hostname)) return null;
-      const seg = url.pathname.split('/').filter(Boolean)[0];
-      return seg || null;
-    }catch { return null; }
-  }
-
-  function createOnce(card, mount, profileUrl, opts = { height: 520 }){
-    if (perCardFlag.get(card)) return; // 
-    perCardFlag.set(card, true);
-
-    const sn = extractScreenName(profileUrl);
-    if (!sn) { mount.textContent = 'XURL無効'; return; }
-
-    const now = Date.now();
-    const wait = Math.max(0, RATE_MS - (now - lastTs));
-    lastTs = now + wait;
-
-    setTimeout(() => {
-      window.twttr.widgets.createTimeline(
-        { sourceType: 'profile', screenName: sn },
-        mount,
-        opts 
-      ).catch(()=>{  });
-    }, wait);
-  }
-
-  return { ensureWidgets, createOnce };
-})();
 
 function toggleIGEmbed(card, permalink, button){
   let wrap=card.querySelector('.ig-embed');
@@ -357,48 +296,143 @@ function toggleIGEmbed(card, permalink, button){
     if(button){ button.title='Instagramを表示'; button.setAttribute('aria-label','Instagramを表示'); button.classList.remove('open'); button.setAttribute('aria-expanded','false'); }
   }
 }
-function toggleXEmbed(card, permalink, button){
-  let wrap = card.querySelector('.x-embed');
 
-  if (button && button.dataset.busy === '1') return;
-  if (button) { button.dataset.busy = '1'; setTimeout(()=>{ button.dataset.busy=''; }, 700); }
+function normalizeXUrl(u){
+  try{
+    const url = new URL(u);
+    if (url.hostname.endsWith('x.com')) url.hostname = 'twitter.com';
+    return url.toString();
+  }catch(e){
+    console.warn('[X] invalid URL:', u, e);
+    return '';
+  }
+}
 
-  if(!wrap){
-    const titleRow = card.querySelector('.card-body .title-row');
-    wrap = document.createElement('div');
-    wrap.className = 'x-embed ig-embed';
-    wrap.hidden = true;
-    titleRow && titleRow.insertAdjacentElement('afterend', wrap);
+const XTimelineManager = (() => {
+  let loading = false;
+  let lastTs = 0;
+  const RATE_MS = 4000;
+  const perCardFlag = new WeakMap();
 
-    const url = normalizeXUrl(permalink || '');
-
-    XTimelineManager.ensureWidgets(() => {
-      XTimelineManager.createOnce(card, wrap, url, { height: 520 });
-      wrap.hidden = false;
-      if(button){
-        button.title='Xを閉じる';
-        button.setAttribute('aria-label','Xを閉じる');
-        button.classList.add('open');
-        button.setAttribute('aria-expanded','true');
+  function ensureWidgets(cb){
+    try{
+      if (window.twttr && window.twttr.widgets) { cb(); return; }
+      if (loading){
+        const id = setInterval(() => {
+          if (window.twttr && window.twttr.widgets){ clearInterval(id); cb(); }
+        }, 200);
+        return;
       }
-    });
+      loading = true;
+      const s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://platform.twitter.com/widgets.js';
+      s.onload = () => { loading = false; cb(); };
+      s.onerror = () => { loading = false; console.error('[X] widgets.js load failed'); };
+      document.body.appendChild(s);
+    }catch(e){
+      console.error('[X] ensureWidgets error', e);
+    }
+  }
 
-  } else {
-    const nowHidden = !wrap.hidden;
-    wrap.hidden = nowHidden;
-    if(button){
-      if(nowHidden){
-        button.title='Xを表示';
-        button.setAttribute('aria-label','Xを表示');
-        button.classList.remove('open');
-        button.setAttribute('aria-expanded','false');
-      }else{
-        button.title='Xを閉じる';
-        button.setAttribute('aria-label','Xを閉じる');
-        button.classList.add('open');
-        button.setAttribute('aria-expanded','true');
+  function extractScreenName(urlStr){
+    try{
+      const url = new URL(urlStr);
+      if (!/twitter\.com$/.test(url.hostname)) return null;
+      const seg = url.pathname.split('/').filter(Boolean)[0];
+      return seg || null;
+    }catch(e){
+      return null;
+    }
+  }
+
+  function createOnce(card, mount, profileUrl, opts = { height: 520 }){
+    if (!card || !mount){ console.warn('[X] createOnce missing mount'); return; }
+    if (perCardFlag.get(card)) return; 
+    perCardFlag.set(card, true);
+
+    const sn = extractScreenName(profileUrl);
+    if (!sn){ mount.textContent = 'XのプロフィールURL無効'; return; }
+
+    const now = Date.now();
+    const wait = Math.max(0, RATE_MS - (now - lastTs));
+    lastTs = now + wait;
+
+    setTimeout(() => {
+      try{
+        if (!(window.twttr && window.twttr.widgets)){
+          ensureWidgets(() => {
+            window.twttr.widgets.createTimeline(
+              { sourceType: 'profile', screenName: sn },
+              mount,
+              opts
+            ).catch(()=>{  });
+          });
+          return;
+        }
+        window.twttr.widgets.createTimeline(
+          { sourceType: 'profile', screenName: sn },
+          mount,
+          opts
+        ).catch(()=>{ /* ignore */ });
+      }catch(e){
+        console.error('[X] createTimeline error', e);
+      }
+    }, wait);
+  }
+
+  return { ensureWidgets, createOnce };
+})();
+
+function toggleXEmbed(card, permalink, button){
+  try{
+    let wrap = card?.querySelector?.('.x-embed');
+
+    if (button && button.dataset.busy === '1') return;
+    if (button) { button.dataset.busy = '1'; setTimeout(()=>{ button.dataset.busy=''; }, 700); }
+
+    if (!wrap){
+      const titleRow = card?.querySelector?.('.card-body .title-row') || card;
+      wrap = document.createElement('div');
+      wrap.className = 'x-embed ig-embed';
+      wrap.style.minHeight = '80px';
+      wrap.hidden = true; 
+      titleRow?.insertAdjacentElement?.('afterend', wrap);
+
+      const url = normalizeXUrl(permalink || '');
+      if (!url){ wrap.textContent = 'XのURLが不正です'; wrap.hidden = false; return; }
+
+      XTimelineManager.ensureWidgets(() => {
+        XTimelineManager.createOnce(card, wrap, url, { height: 520 }); // 必要なら theme: 'light'
+        wrap.hidden = false;
+        if(button){
+          button.title='Xを閉じる';
+          button.setAttribute('aria-label','Xを閉じる');
+          button.classList.add('open');
+          button.setAttribute('aria-expanded','true');
+        }
+      });
+
+    } else {
+      const nowHidden = !wrap.hidden;
+      wrap.hidden = nowHidden;
+      if(button){
+        if(nowHidden){
+          button.title='Xを表示';
+          button.setAttribute('aria-label','Xを表示');
+          button.classList.remove('open');
+          button.setAttribute('aria-expanded','false');
+        }else{
+          button.title='Xを閉じる';
+          button.setAttribute('aria-label','Xを閉じる');
+          button.classList.add('open');
+          button.setAttribute('aria-expanded','true');
+        }
       }
     }
+  }catch(e){
+    console.error('[X] toggleXEmbed fatal', e);
+    alert('Xの埋め込みでエラーが発生しました（詳細はConsoleを参照）');
   }
 }
 
