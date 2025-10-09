@@ -276,16 +276,7 @@ function ensureIGScript(){
   document.body.appendChild(s);
 }
 let xScriptLoading = false;
-function ensureXScript(){
-  if (window.twttr && window.twttr.widgets) return;
-  if (xScriptLoading) return;
-  xScriptLoading = true;
-  const s = document.createElement('script');
-  s.async = true;
-  s.src = 'https://platform.twitter.com/widgets.js';
-  s.onload = () => { xScriptLoading = false; };
-  document.body.appendChild(s);
-}
+
 function normalizeXUrl(u){
   try{
     const url = new URL(u);
