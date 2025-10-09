@@ -275,20 +275,17 @@ function ensureIGScript(){
   s.onload=()=>{ igScriptLoaded=true; };
   document.body.appendChild(s);
 }
+let xScriptLoading = false;
 function ensureXScript(){
-  if (window.twttr && window.twttr.widgets) {
-    window.twttr.widgets.load();
-    return;
-  }
+  if (window.twttr && window.twttr.widgets) return;
+  if (xScriptLoading) return;
+  xScriptLoading = true;
   const s = document.createElement('script');
   s.async = true;
   s.src = 'https://platform.twitter.com/widgets.js';
-  s.onload = () => {
-    if (window.twttr && window.twttr.widgets) window.twttr.widgets.load();
-  };
+  s.onload = () => { xScriptLoading = false; };
   document.body.appendChild(s);
 }
-
 function normalizeXUrl(u){
   try{
     const url = new URL(u);
@@ -316,43 +313,66 @@ function toggleIGEmbed(card, permalink, button){
 }
 function toggleXEmbed(card, permalink, button){
   let wrap = card.querySelector('.x-embed');
+  if (button && button.dataset.busy === '1') return;
+  if (button) { button.dataset.busy = '1'; setTimeout(()=>{ button.dataset.busy=''; }, 700); }
+
   if(!wrap){
     const titleRow = card.querySelector('.card-body .title-row');
     wrap = document.createElement('div');
     wrap.className = 'x-embed ig-embed';
+    wrap.hidden = true; 
+    titleRow && titleRow.insertAdjacentElement('afterend', wrap);
 
     const url = normalizeXUrl(permalink || '');
-
     wrap.innerHTML = `
       <a class="twitter-timeline"
          data-height="520"
          data-chrome="noheader nofooter noborders"
          data-lang="ja"
          href="${url}"></a>`;
-
-    titleRow && titleRow.insertAdjacentElement('afterend', wrap);
-
     ensureXScript();
-    if (window.twttr && window.twttr.widgets) {
-      window.twttr.widgets.load(wrap);
-    }
 
-    if(button){
-      button.title='Xを閉じる';
-      button.setAttribute('aria-label','Xを閉じる');
-      button.classList.add('open');
-      button.setAttribute('aria-expanded','true');
-    }
+    const tryLoad = () => {
+      if (window.twttr && window.twttr.widgets) {
+        if (!wrap.dataset.loaded) {
+          window.twttr.widgets.load(wrap);
+          wrap.dataset.loaded = '1';
+        }
+        wrap.hidden = false;
+        if(button){
+          button.title='Xを閉じる';
+          button.setAttribute('aria-label','Xを閉じる');
+          button.classList.add('open');
+          button.setAttribute('aria-expanded','true');
+        }
+      } else {
+        let cnt = +(wrap.dataset.retry||0);
+        if (cnt < 10) {
+          wrap.dataset.retry = String(cnt+1);
+          setTimeout(tryLoad, 200);
+        }
+      }
+    };
+    tryLoad();
   } else {
-    wrap.remove();
+    const nowHidden = !wrap.hidden;
+    wrap.hidden = nowHidden;
     if(button){
-      button.title='Xを表示';
-      button.setAttribute('aria-label','Xを表示');
-      button.classList.remove('open');
-      button.setAttribute('aria-expanded','false');
+      if(nowHidden){
+        button.title='Xを表示';
+        button.setAttribute('aria-label','Xを表示');
+        button.classList.remove('open');
+        button.setAttribute('aria-expanded','false');
+      }else{
+        button.title='Xを閉じる';
+        button.setAttribute('aria-label','Xを閉じる');
+        button.classList.add('open');
+        button.setAttribute('aria-expanded','true');
+      }
     }
   }
 }
+
 
 
 function normalize(s){ return (s||'').toLowerCase(); }
