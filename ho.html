@@ -297,16 +297,95 @@ function toggleIGEmbed(card, permalink, button){
   }
 }
 
+
 function normalizeXUrl(u){
   try{
     const url = new URL(u);
     if (url.hostname.endsWith('x.com')) url.hostname = 'twitter.com';
     return url.toString();
-  }catch(e){
-    console.warn('[X] invalid URL:', u, e);
-    return '';
-  }
+  }catch{ return ''; }
 }
+
+function extractXScreenName(urlStr){
+  try{
+    const url = new URL(normalizeXUrl(urlStr));
+    if (!/twitter\.com$/.test(url.hostname)) return null;
+    // /i /home /intent /share などは除外
+    const bad = new Set(['i','home','intent','share','search','hashtag','notifications','messages']);
+    const seg = url.pathname.split('/').filter(Boolean)[0] || '';
+    if (!seg || bad.has(seg)) return null;
+    // 文字種を制限（英数_ のみ）
+    if (!/^[A-Za-z0-9_]{1,15}$/.test(seg)) return null;
+    return seg;
+  }catch{ return null; }
+}
+
+const XTimelineCache = (() => {
+  const map = new Map();     
+  const queue = [];      
+  let running = false;
+  const RATE_MS = 12000;  
+
+  let loading=false, loaded=false, waiters=[];
+  function ensureWidgets(cb){
+    if (loaded && window.twttr && window.twttr.widgets){ cb(); return; }
+    waiters.push(cb);
+    if (loading) return;
+    loading = true;
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://platform.twitter.com/widgets.js';
+    s.onload = () => { loaded=true; loading=false; const ws=waiters.slice(); waiters=[]; ws.forEach(fn=>fn()); };
+    s.onerror = () => { loading=false; const ws=waiters.slice(); waiters=[]; ws.forEach(fn=>fn()); };
+    document.body.appendChild(s);
+  }
+
+  function runQueue(){
+    if (running) return;
+    running = true;
+    (function next(){
+      const job = queue.shift();
+      if (!job){ running = false; return; }
+      const { screenName, tempMount, resolve } = job;
+
+      window.twttr.widgets.createTimeline(
+        { sourceType: 'profile', screenName },
+        tempMount,
+        { height: 520 }   // 必要最小だけ。テーマ付けたいなら {height:520, theme:'light'}
+      ).then(widgetEl => {
+        map.set(screenName, widgetEl);
+        resolve(widgetEl);
+        setTimeout(next, RATE_MS);
+      }).catch(_err => {
+        setTimeout(next, RATE_MS);
+      });
+    })();
+  }
+
+  function getOrCreate(profileUrl){
+    return new Promise(resolve => {
+      const sn = extractXScreenName(profileUrl);
+      if (!sn){ resolve(null); return; }
+
+      const cached = map.get(sn);
+      if (cached){ resolve(cached); return; }
+
+      ensureWidgets(() => {
+        const temp = document.createElement('div');
+        temp.style.position='absolute'; temp.style.left='-99999px'; temp.style.top='-99999px';
+        document.body.appendChild(temp);
+        queue.push({
+          screenName: sn,
+          tempMount: temp,
+          resolve: (el) => { requestAnimationFrame(()=> temp.remove()); resolve(el); }
+        });
+        runQueue();
+      });
+    });
+  }
+
+  return { getOrCreate };
+})();
 
 const XTimelineManager = (() => {
   let loading = false;
@@ -388,24 +467,38 @@ function toggleXEmbed(card, permalink, button){
   try{
     let wrap = card?.querySelector?.('.x-embed');
 
+    // 連打防止
     if (button && button.dataset.busy === '1') return;
-    if (button) { button.dataset.busy = '1'; setTimeout(()=>{ button.dataset.busy=''; }, 700); }
+    if (button){ button.dataset.busy='1'; setTimeout(()=>{ button.dataset.busy=''; }, 700); }
 
+    const titleRow = card?.querySelector?.('.card-body .title-row') || card;
+
+    // ラッパが無ければ用意（最初だけ）
     if (!wrap){
-      const titleRow = card?.querySelector?.('.card-body .title-row') || card;
       wrap = document.createElement('div');
       wrap.className = 'x-embed ig-embed';
-      wrap.style.minHeight = '80px';
-      wrap.hidden = true; 
+      wrap.style.minHeight = '80px';    // 占位
+      wrap.hidden = true;               // まず隠す
       titleRow?.insertAdjacentElement?.('afterend', wrap);
+    }
 
+    // トグル（開く/閉じる）
+    const opening = wrap.hidden === true;
+
+    if (opening){
       const url = normalizeXUrl(permalink || '');
-      if (!url){ wrap.textContent = 'XのURLが不正です'; wrap.hidden = false; return; }
+      const sn  = extractXScreenName(url);
+      if (!sn){ wrap.textContent = 'XのプロフィールURLが不正です'; wrap.hidden=false; return; }
 
-      XTimelineManager.ensureWidgets(() => {
-        XTimelineManager.createOnce(card, wrap, url, { height: 520 }); // 必要なら theme: 'light'
+      // 既に作成済みならそれを移動。無ければ直列キューで1回だけ作成。
+      XTimelineCache.getOrCreate(url).then(widgetEl => {
+        if (!widgetEl){ wrap.textContent = 'XのプロフィールURLが不正です'; wrap.hidden=false; return; }
+        if (widgetEl.parentElement && widgetEl.parentElement !== wrap){
+          widgetEl.parentElement.removeChild(widgetEl); // 移動（=追加リクエスト無し）
+        }
+        wrap.appendChild(widgetEl);
         wrap.hidden = false;
-        if(button){
+        if (button){
           button.title='Xを閉じる';
           button.setAttribute('aria-label','Xを閉じる');
           button.classList.add('open');
@@ -414,25 +507,17 @@ function toggleXEmbed(card, permalink, button){
       });
 
     } else {
-      const nowHidden = !wrap.hidden;
-      wrap.hidden = nowHidden;
-      if(button){
-        if(nowHidden){
-          button.title='Xを表示';
-          button.setAttribute('aria-label','Xを表示');
-          button.classList.remove('open');
-          button.setAttribute('aria-expanded','false');
-        }else{
-          button.title='Xを閉じる';
-          button.setAttribute('aria-label','Xを閉じる');
-          button.classList.add('open');
-          button.setAttribute('aria-expanded','true');
-        }
+      wrap.hidden = true; // 削除せず非表示にするだけ
+      if (button){
+        button.title='Xを表示';
+        button.setAttribute('aria-label','Xを表示');
+        button.classList.remove('open');
+        button.setAttribute('aria-expanded','false');
       }
     }
   }catch(e){
     console.error('[X] toggleXEmbed fatal', e);
-    alert('Xの埋め込みでエラーが発生しました（詳細はConsoleを参照）');
+    alert('Xの埋め込みでエラーが発生しました（Consoleを参照）');
   }
 }
 
