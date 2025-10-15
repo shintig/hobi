@@ -236,18 +236,33 @@ function buildCard(s){
 
   if(s.menu){ const m=document.createElement('div'); m.className='menu'; m.textContent=s.menu; body.appendChild(m); }
 
+  const storesSec = buildStoresSection(s);
 
-  const act=document.createElement('div'); act.className='actions';
+  const act = document.createElement('div'); act.className='actions';
   if(s.site){ const hp=linkBtn('公式HP', s.site); hp.classList.add('hp'); act.appendChild(hp); }
   if(Array.isArray(s.sns)) for(const sn of s.sns){ if(sn?.url){
-    const b=linkBtn(sn.label||'SNS', sn.url); const L=(sn.label||'').toLowerCase();
-    if(L.includes('insta')){ b.classList.add('igB'); }
+    const b=linkBtn(sn.label||'SNS', sn.url);
+    const L=(sn.label||'').toLowerCase();
+    if(L.includes('insta')) b.classList.add('igB');
     else if(L==='x'||L.includes('twitter')){ b.classList.add('xB'); b.textContent='𝕏'; }
     act.appendChild(b);
   }}
   if(Array.isArray(s.reserve)) for(const r of s.reserve){ if(r?.url){ const rb=linkBtn(r.label||'予約', r.url); rb.classList.add('rv'); act.appendChild(rb); }}
-  body.appendChild(act);
 
+  if(storesSec){
+    const sb = document.createElement('button');
+    sb.type='button'; sb.className='btn store'; sb.textContent='📍店舗一覧';
+    sb.addEventListener('click',()=>{
+      const content = storesSec.querySelector('.stores-content');
+      const open = content.hidden;
+      content.hidden = !open;
+      storesSec.classList.toggle('open', open);
+    });
+    act.appendChild(sb);
+  }
+
+  const body = document.createElement('div'); body.className='card-body';
+  body.appendChild(act);
 
   if(storesSec) body.appendChild(storesSec);
 
