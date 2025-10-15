@@ -249,7 +249,7 @@ function buildCard(s){
   body.appendChild(act);
 
 
-  const storesSec=buildStoresSection(s); if(storesSec) body.appendChild(storesSec);
+  if(storesSec) body.appendChild(storesSec);
 
   card.appendChild(body);
 
