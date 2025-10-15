@@ -165,6 +165,13 @@ function linkBtn(label,href){
   return a;
 }
 
+function getTweetId(url=''){
+  try{
+    const u = String(url);
+    const m = u.match(/status\/(\d+)/) || u.match(/\/(\d{10,})/);
+    return m ? m[1] : null;
+  }catch(_){ return null; }
+}
 
 function buildStoresSection(s){
   if(!Array.isArray(s.branches)||!s.branches.length) return null;
@@ -277,6 +284,20 @@ function ensureIGScript(){
 }
 let xScriptLoading = false;
 
+function ensureXScript(cb){
+  if (window.twttr && window.twttr.widgets) { cb && cb(window.twttr); return; }
+  const s = document.createElement('script');
+  s.async = true;
+  s.src = 'https://platform.twitter.com/widgets.js';
+  s.onload = () => {
+    if (window.twttr && window.twttr.ready) {
+      window.twttr.ready(t => cb && cb(t));
+    } else {
+      cb && cb(window.twttr);
+    }
+  };
+  document.body.appendChild(s);
+}
 
 function toggleIGEmbed(card, permalink, button){
   let wrap=card.querySelector('.ig-embed');
@@ -310,11 +331,9 @@ function extractXScreenName(urlStr){
   try{
     const url = new URL(normalizeXUrl(urlStr));
     if (!/twitter\.com$/.test(url.hostname)) return null;
-    // /i /home /intent /share などは除外
     const bad = new Set(['i','home','intent','share','search','hashtag','notifications','messages']);
     const seg = url.pathname.split('/').filter(Boolean)[0] || '';
     if (!seg || bad.has(seg)) return null;
-    // 文字種を制限（英数_ のみ）
     if (!/^[A-Za-z0-9_]{1,15}$/.test(seg)) return null;
     return seg;
   }catch{ return null; }
@@ -464,56 +483,48 @@ const XTimelineManager = (() => {
 })();
 
 function toggleXEmbed(card, permalink, button){
-  try{
-    let wrap = card?.querySelector?.('.x-embed');
+  let wrap = card.querySelector('.x-embed');
+  if (!wrap){
+    const tweetId = getTweetId(permalink);
+    const titleRow = card.querySelector('.card-body .title-row');
+    wrap = document.createElement('div');
+    wrap.className = 'x-embed ig-embed';
+    titleRow && titleRow.insertAdjacentElement('afterend', wrap);
 
-    if (button && button.dataset.busy === '1') return;
-    if (button){ button.dataset.busy='1'; setTimeout(()=>{ button.dataset.busy=''; }, 700); }
+    ensureXScript(twttr=>{
+      if (tweetId && twttr && twttr.widgets){
+        twttr.widgets.createTweet(tweetId, wrap, { align:'center', dnt:true })
+          .then(()=>{
+            if(button){
+              button.classList.add('open');
+              button.setAttribute('aria-expanded','true');
+              button.title='Xを閉じる';
+              button.setAttribute('aria-label','Xを閉じる');
+            }
+          })
+          .catch(()=> showMock());
+      } else {
+        showMock();
+      }
+    });
 
-    const titleRow = card?.querySelector?.('.card-body .title-row') || card;
-
-    if (!wrap){
-      wrap = document.createElement('div');
-      wrap.className = 'x-embed ig-embed';
-      wrap.style.minHeight = '80px';  
-      wrap.hidden = true;            
-      titleRow?.insertAdjacentElement?.('afterend', wrap);
-    }
-
-    const opening = wrap.hidden === true;
-
-    if (opening){
-      const url = normalizeXUrl(permalink || '');
-      const sn  = extractXScreenName(url);
-      if (!sn){ wrap.textContent = 'XのプロフィールURLが不正です'; wrap.hidden=false; return; }
-
-      XTimelineCache.getOrCreate(url).then(widgetEl => {
-        if (!widgetEl){ wrap.textContent = 'XのプロフィールURLが不正です'; wrap.hidden=false; return; }
-        if (widgetEl.parentElement && widgetEl.parentElement !== wrap){
-          widgetEl.parentElement.removeChild(widgetEl);
-        }
-        wrap.appendChild(widgetEl);
-        wrap.hidden = false;
-        if (button){
-          button.title='Xを閉じる';
-          button.setAttribute('aria-label','Xを閉じる');
-          button.classList.add('open');
-          button.setAttribute('aria-expanded','true');
-        }
-      });
-
-    } else {
-      wrap.hidden = true;
-      if (button){
-        button.title='Xを表示';
-        button.setAttribute('aria-label','Xを表示');
-        button.classList.remove('open');
-        button.setAttribute('aria-expanded','false');
+    function showMock(){
+      wrap.innerHTML = '<div style="padding:12px;border:1px dashed #aaa;border-radius:8px;background:#fff;font-size:13px">この環境ではツイートのプレビューを描画できません。<br><a href="'+permalink+'" target="_blank" rel="noopener">投稿をXで開く</a></div>';
+      if(button){
+        button.classList.add('open');
+        button.setAttribute('aria-expanded','true');
+        button.title='Xを閉じる';
+        button.setAttribute('aria-label','Xを閉じる');
       }
     }
-  }catch(e){
-    console.error('[X] toggleXEmbed fatal', e);
-    alert('Xの埋め込みでエラーが発生しました（Consoleを参照）');
+  } else {
+    wrap.remove();
+    if(button){
+      button.classList.remove('open');
+      button.setAttribute('aria-expanded','false');
+      button.title='Xを表示';
+      button.setAttribute('aria-label','Xを表示');
+    }
   }
 }
 
