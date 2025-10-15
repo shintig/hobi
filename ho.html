@@ -467,22 +467,19 @@ function toggleXEmbed(card, permalink, button){
   try{
     let wrap = card?.querySelector?.('.x-embed');
 
-    // 連打防止
     if (button && button.dataset.busy === '1') return;
     if (button){ button.dataset.busy='1'; setTimeout(()=>{ button.dataset.busy=''; }, 700); }
 
     const titleRow = card?.querySelector?.('.card-body .title-row') || card;
 
-    // ラッパが無ければ用意（最初だけ）
     if (!wrap){
       wrap = document.createElement('div');
       wrap.className = 'x-embed ig-embed';
-      wrap.style.minHeight = '80px';    // 占位
-      wrap.hidden = true;               // まず隠す
+      wrap.style.minHeight = '80px';  
+      wrap.hidden = true;            
       titleRow?.insertAdjacentElement?.('afterend', wrap);
     }
 
-    // トグル（開く/閉じる）
     const opening = wrap.hidden === true;
 
     if (opening){
@@ -490,11 +487,10 @@ function toggleXEmbed(card, permalink, button){
       const sn  = extractXScreenName(url);
       if (!sn){ wrap.textContent = 'XのプロフィールURLが不正です'; wrap.hidden=false; return; }
 
-      // 既に作成済みならそれを移動。無ければ直列キューで1回だけ作成。
       XTimelineCache.getOrCreate(url).then(widgetEl => {
         if (!widgetEl){ wrap.textContent = 'XのプロフィールURLが不正です'; wrap.hidden=false; return; }
         if (widgetEl.parentElement && widgetEl.parentElement !== wrap){
-          widgetEl.parentElement.removeChild(widgetEl); // 移動（=追加リクエスト無し）
+          widgetEl.parentElement.removeChild(widgetEl);
         }
         wrap.appendChild(widgetEl);
         wrap.hidden = false;
@@ -507,7 +503,7 @@ function toggleXEmbed(card, permalink, button){
       });
 
     } else {
-      wrap.hidden = true; // 削除せず非表示にするだけ
+      wrap.hidden = true;
       if (button){
         button.title='Xを表示';
         button.setAttribute('aria-label','Xを表示');
