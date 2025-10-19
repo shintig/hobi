@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>ご褒美グルメ一覧（検索・都道府県/カテゴリ・放送日ソート＋店舗一覧）</title>
+<style>
+  :root{--bg:#d8ecff;--card:#f5fbff;--text:#0b1220;--muted:#516173;--ink:#0b4a8b;--accent:#1d7fd0;--title-min-h:44px}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,sans-serif}
+  @supports (-webkit-touch-callout: none){body{font-family:"筑紫A丸ゴシック","Tsukushi A Round Gothic",-apple-system,system-ui,Segoe UI,Roboto,"Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,sans-serif}}
+
+  header{position:static;background:var(--bg);border-bottom:1px solid rgba(11,74,139,.12)}
+  .wrap{max-width:1080px;margin:0 auto;padding:14px 16px}
+  h1{margin:0 0 8px;font-size:20px}
+
+  .titlebar{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:9999px;border:none;background:#ffffff;cursor:pointer;margin-left:8px;transition:transform .08s ease}
+  .icon-btn:hover{transform:translateY(1px)}
+  .icon-btn:active{transform:translateY(2px)}
+  .icon-btn svg{width:16px;height:16px}
+  .icon-btn.search svg{fill:var(--ink)}
+  .search-wrap{margin-top:8px}
+  .search-wrap[hidden]{display:none}
+  .search-wrap input[type="search"]{width:100%;background:#fff;border:0;border-radius:12px;padding:10px 12px;font-size:14px;outline:none}
+
+  .controls{display:grid;grid-template-columns:1fr;gap:10px}
+  .controls .row{display:flex;gap:8px;flex-wrap:wrap}
+  .controls select{flex:1;min-width:160px;background:var(--bg);color:var(--ink);border:1px solid var(--ink);border-radius:9999px;padding:9px 14px;font-size:14px}
+
+  .multicat{position:relative;flex:1;min-width:220px}
+  .multicat .multi-trigger{width:100%;background:var(--bg);color:var(--ink);border:1px solid var(--ink);border-radius:9999px;padding:9px 14px;font-size:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer}
+  .multicat .multi-trigger .label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .multicat .multi-trigger .chev{width:12px;height:12px;transition:transform .18s ease}
+  .multicat.open .multi-trigger .chev{transform:rotate(180deg)}
+  .multicat .multi-menu{position:absolute;inset:auto 0 0 0;transform:translateY(calc(100% + 6px));background:#fff;border:1px solid rgba(11,74,139,.2);border-radius:12px;box-shadow:0 10px 24px rgba(0,0,0,.08);padding:8px;display:grid;grid-template-columns:1fr;gap:6px;z-index:20}
+  .multicat .multi-menu[hidden]{display:none}
+  .multicat .opt{display:flex;align-items:center;gap:8px;font-size:14px}
+  .multicat .opt input{accent-color:var(--ink)}
+  .visually-hidden{position:absolute !important;left:-10000px !important;top:auto !important;width:1px !important;height:1px !important;overflow:hidden !important}
+
+  .summary{margin-top:6px;color:var(--muted);font-size:12px}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:16px}
+
+  .card{position:relative;background:var(--card);border:none;border-radius:18px;box-shadow:0 6px 20px rgba(0,0,0,.06);display:flex;flex-direction:column;padding-top:0}
+  .card[id]{scroll-margin-top:96px}
+  .media{position:relative}
+  .thumb{aspect-ratio:16/9;background:linear-gradient(135deg,#ecf6ff,#e6f1ff);display:block;width:100%}
+
+  .toggle-btn{position:absolute;top:8px;right:8px;padding:4px 8px;border-radius:9999px;border:1px solid transparent;background:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:6px;line-height:1;font-size:13px;color:var(--ink)}
+  .toggle-btn .ico svg{width:14px;height:14px;display:block}
+  .toggle-btn .chev{width:12px;height:12px;display:block;transition:transform .18s ease}
+  .toggle-btn.open .chev{transform:rotate(180deg)}
+  .toggle-btn.ig{background:linear-gradient(#fff,#fff) padding-box,linear-gradient(45deg,#f58529,#dd2a7b 35%,#8134af 65%,#515bd4) border-box;color:#8134af}
+  .toggle-btn.x{background:linear-gradient(#fff,#fff) padding-box,linear-gradient(180deg,#111,#333) border-box;color:#111}
+
+  .ig-embed{padding:8px;background:#fff;margin-top:8px}
+  .ig-embed[hidden]{display:none !important;padding:0;margin:0}
+
+  .card-body{padding:12px}
+  .title-row{display:flex;align-items:center;justify-content:flex-start;gap:8px;min-height:var(--title-min-h)}
+  .name{margin:0;flex:0 1 auto;font-weight:700}
+  .meta{color:var(--muted);font-size:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px}
+  .cat{font-size:11px;line-height:1;padding:5px 10px;border-radius:9999px;background:#fff;color:var(--ink);border:0.8px solid var(--ink)}
+  .menu{font-size:13px;margin:8px 0}
+
+  .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding:0 12px 12px}
+  .btn{appearance:none;border:none;background:#fff;border-radius:999px;padding:8px 12px;font-size:13px;cursor:pointer;text-decoration:none;display:inline-block;transition:transform .08s ease,filter .15s ease}
+  .btn:hover{transform:translateY(1px)}
+  .btn:active{transform:translateY(2px)}
+  .btn.hp{background:var(--accent);color:#fff}
+  .btn.igB{background:linear-gradient(45deg,#f58529,#dd2a7b 35%,#8134af 65%,#515bd4);color:#fff}
+  .btn.xB{background:linear-gradient(180deg,#1a1a1a,#2a1f2a);color:#fff}
+  .btn.rv{background:#ff9e00;color:#fff} /* 食べログ系カラー */
+  .btn.store{background:#e8f2ff;color:#0b1220} /* 店舗一覧（同列ボタン） */
+
+  .stores{padding:0 12px 12px}
+  .stores-toggle{appearance:none;background:none;border:none;color:var(--ink);font-size:13px;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+  .stores-toggle .chev{width:12px;height:12px;transition:transform .18s ease}
+  .stores.open .stores-toggle .chev{transform:rotate(180deg)}
+  .stores-content{margin-top:8px;background:#fff;border:1px solid rgba(11,74,139,.18);border-radius:12px;overflow:hidden}
+  .stores-list{list-style:none;margin:0;padding:0}
+  .stores-list li{display:flex;align-items:center;gap:8px;font-size:12px;padding:8px 10px;border-top:1px solid rgba(11,74,139,.12)}
+  .stores-list li:first-child{border-top:none}
+  .stores-list a{color:var(--ink);text-decoration:underline}
+  .stores-badge{font-size:10px;padding:2px 6px;border-radius:9999px;border:1px solid var(--accent);color:var(--accent);background:#fff;margin-left:auto}
+  .stores-area{color:var(--muted)}
+</style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="titlebar">
+        <h1>ご褒美グルメ（Instagram/X プレビューは模擬表示）</h1>
+        <button id="searchToggle" class="icon-btn search" aria-label="検索" aria-expanded="false" title="検索">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3a7 7 0 105.29 12.29l4.2 4.2 1.42-1.42-4.2-4.2A7 7 0 0010 3zm0 2a5 5 0 110 10A5 5 0 0110 5z"/></svg>
+        </button>
+      </div>
+      <div id="searchWrap" class="search-wrap" hidden>
+        <input id="q" type="search" placeholder="店名・エリア・メニューを検索"/>
+      </div>
+      <div class="controls">
+        <div class="row">
+          <select id="area"><option value="">すべてのエリア（都道府県）</option></select>
+          <select id="cat" multiple size="4" class="visually-hidden" title="カテゴリを複数選択できます"><option value="">（すべてのカテゴリ）</option></select>
+          <div id="catFilter" class="multicat">
+            <button type="button" class="multi-trigger" aria-haspopup="true" aria-expanded="false">
+              <span class="label">（すべてのカテゴリ）</span>
+              <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="multi-menu" role="menu" hidden></div>
+          </div>
+          <select id="appearance">
+            <option value="all">すべての店舗</option>
+            <option value="featured">登場店舗のみ</option>
+            <option value="other">その他店舗のみ</option>
+          </select>
+          <select id="sort">
+            <option value="desc">放送日（新しい順）</option>
+            <option value="asc">放送日（古い順）</option>
+          </select>
+        </div>
+      </div>
+      <div id="summary" class="summary"></div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="list" class="grid" aria-live="polite"></section>
+  </main>
+
+<script>
+window.__DEV_TESTS__ = false;
+
+// {
+//   id:'unique-id', name:'店名', area:'都道府県・市区', broadcastDate:'YYYY-MM-DD',
+//   categories:['カテゴリA','カテゴリB'], menu:'代表メニュー', site:'#',
+//   sns:[{label:'Instagram',url:'https://www.instagram.com/p/.../'},{label:'X(Twitter)',url:'https://x.com/...'}],
+//   reserve:[{label:'食べログ',url:'#'}],
+//   branches:[{name:'◯◯本店',area:'都道府県・市区',url:'#',featured:true},{name:'△△店',area:'都道府県・市区',url:'#',featured:false}]
+// }
+const storesData=[
+
+]
+
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=(s='')=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+function categoriesOf(s){ if(Array.isArray(s.categories)) return s.categories.slice(); if(typeof s.category==='string'&&s.category) return [s.category]; return []; }
+function getPref(a){ return (a||'').split('・')[0]; }
+function linkBtn(label,href){ const a=document.createElement('a'); a.href=href||'#'; a.target=(href&&href.startsWith('http'))? '_blank':'_self'; a.rel='noopener'; a.className='btn'; a.textContent=label; return a; }
+
+function getTweetId(url=''){
+  const m = url.match(/status\/(\d+)/) || url.match(/\/(\d{10,})/);
+  return m ? m[1] : null;
+}
+
+function getTweetId(url=''){
+  try{
+    const u = String(url);
+    const afterStatus = u.split('status/')[1];
+    const after = afterStatus ? afterStatus : u.split('?')[0];
+    const id = (after||'').split(/[/?#&]/)[0];
+    return (/^\d{10,}$/).test(id) ? id : null;
+  }catch(e){ return null; }
+}
+
+function buildStoresSection(s){
+  if(!Array.isArray(s.branches)||!s.branches.length) return null;
+  const sec=document.createElement('section'); sec.className='stores';
+  const content=document.createElement('div'); content.className='stores-content'; content.hidden=true;
+  const ul=document.createElement('ul'); ul.className='stores-list';
+  for(const b of s.branches){
+    const li=document.createElement('li');
+    li.innerHTML=`<a href="${esc(b.url||'#')}" target="_blank" rel="noopener">${esc(b.name||'店舗')}</a>`
+                +(b.area?` <span class="stores-area">（${esc(b.area)}）</span>`:'')
+                +(b.featured?` <span class="stores-badge">番組登場</span>`:'');
+    ul.appendChild(li);
+  }
+  content.appendChild(ul);
+  sec.appendChild(content);
+  return sec;
+}
+
+function buildCard(s){
+  const card=document.createElement('article'); card.className='card'; card.id=s.id;
+  if(s.image){ const media=document.createElement('div'); media.className='media'; const thumb=document.createElement('div'); thumb.className='thumb'; thumb.style.backgroundImage=`url('${esc(s.image)}')`; thumb.style.backgroundSize='cover'; thumb.style.backgroundPosition='center'; media.appendChild(thumb); card.appendChild(media); }
+  const body=document.createElement('div'); body.className='card-body';
+  const titleRow=document.createElement('div'); titleRow.className='title-row';
+  const h3=document.createElement('h3'); h3.className='name'; h3.textContent=s.name||'（店名未入力）'; titleRow.appendChild(h3);
+  const share=document.createElement('button'); share.className='icon-btn'; share.setAttribute('aria-label','共有'); share.title='共有';
+  share.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l4 4h-3v7h-2V6H8l4-4zm8 9v9a2 2 0 01-2 2H6a2 2 0 01-2-2v-9h2v9h12v-9h2z"/></svg>';
+  share.addEventListener('click',async()=>{ const url=new URL(location.href); url.hash=s.id; const title=s.name||'お店情報'; try{ if(navigator.share){ await navigator.share({title,url:url.toString()}); } else { await navigator.clipboard.writeText(url.toString()); share.classList.add('ok'); setTimeout(()=>share.classList.remove('ok'),900);} }catch(e){} });
+  titleRow.appendChild(share);
+  body.appendChild(titleRow);
+
+  const meta=document.createElement('div'); meta.className='meta'; const cats=categoriesOf(s);
+  meta.innerHTML=`<span>${esc(s.area||'エリア不明')}</span>`
+               +(s.broadcastDate?`<span>放送:<time datetime="${esc(s.broadcastDate)}">${esc(s.broadcastDate)}</time></span>`:'')
+               +(cats.length?cats.map(c=>`<span class="cat">${esc(c)}</span>`).join(''):'');
+  body.appendChild(meta);
+
+  if(s.menu){ const m=document.createElement('div'); m.className='menu'; m.textContent=s.menu; body.appendChild(m); }
+
+  const act=document.createElement('div'); act.className='actions';
+  if(s.site){ const hp=linkBtn('公式HP', s.site); hp.classList.add('hp'); act.appendChild(hp); }
+  if(Array.isArray(s.sns)) for(const sn of s.sns){ if(sn?.url){ const b=linkBtn(sn.label||'SNS', sn.url); const L=(sn.label||'').toLowerCase(); if(L.includes('insta')){ b.classList.add('igB'); } else if(L==='x'||L.includes('twitter')){ b.classList.add('xB'); b.textContent='𝕏'; } act.appendChild(b);} }
+  if(Array.isArray(s.reserve)) for(const r of s.reserve){ if(r?.url){ const rb=linkBtn(r.label||'予約', r.url); rb.classList.add('rv'); act.appendChild(rb);} }
+  const storesSec=buildStoresSection(s);
+  if(storesSec){
+    const sb=document.createElement('button'); sb.type='button'; sb.className='btn store'; sb.textContent='📍店舗一覧';
+    sb.addEventListener('click',()=>{ const content=storesSec.querySelector('.stores-content'); const open=content.hidden; content.hidden=!open; });
+    act.appendChild(sb);
+  }
+  body.appendChild(act);
+
+  if(storesSec) body.appendChild(storesSec);
+
+  card.appendChild(body);
+
+  const igLink=(Array.isArray(s.sns)? s.sns.find(sn=>(sn.label||'').toLowerCase().includes('insta')): null);
+  const xLink =(!igLink && Array.isArray(s.sns))? s.sns.find(sn=>{ const L=(sn.label||'').toLowerCase(); return L==='x'||L.includes('twitter'); }): null;
+  if(igLink&&igLink.url){ const btn=document.createElement('button'); btn.className='toggle-btn ig'; btn.type='button'; btn.title='Instagramを表示'; btn.setAttribute('aria-label','Instagramを表示'); btn.setAttribute('aria-expanded','false'); btn.innerHTML='<span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" role="img"><path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm5 5.5A4.5 4.5 0 1 0 16.5 12 4.5 4.5 0 0 0 12 7.5zm6-1.75a1.25 1.25 0 1 0 1.25 1.25A1.25 1.25 0 0 0 18 5.75z"/></svg></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'; btn.addEventListener('click',()=>toggleIGEmbed(card,igLink.url,btn)); card.appendChild(btn);} else if(xLink&&xLink.url){ const btnX=document.createElement('button'); btnX.className='toggle-btn x'; btnX.type='button'; btnX.title='X(Twitter)を表示'; btnX.setAttribute('aria-label','X(Twitter)を表示'); btnX.setAttribute('aria-expanded','false'); btnX.innerHTML='<span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" role="img"><path d="M18.244 2H21l-6.52 7.45L22 22h-6.955l-4.48-5.83L4.5 22H2l6.98-7.97L2 2h7l4.01 5.25L18.244 2Zm-1.213 18.5h1.785L7.03 3.5H5.17l11.861 17Z"/></svg></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'; btnX.addEventListener('click',()=>toggleXEmbed(card,xLink.url,btnX)); card.appendChild(btnX); }
+
+  return card;
+}
+
+let igScriptLoaded=false;
+function ensureIGScript(){ if(igScriptLoaded) return; const s=document.createElement('script'); s.async=true; s.src='https://www.instagram.com/embed.js'; s.onload=()=>{igScriptLoaded=true}; document.body.appendChild(s); }
+function ensureXScript(cb){
+  if (window.twttr && window.twttr.widgets) { cb && cb(window.twttr); return; }
+  const s = document.createElement('script');
+  s.async = true;
+  s.src = 'https://platform.twitter.com/widgets.js';
+  s.onload = () => {
+    if (window.twttr && window.twttr.ready) {
+      window.twttr.ready(t => cb && cb(t));
+    } else {
+      cb && cb(window.twttr);
+    }
+  };
+  document.body.appendChild(s);
+}
+  const s = document.createElement('script');
+  s.async = true;
+  s.src = 'https://platform.twitter.com/widgets.js';
+  s.onload = () => {
+    if (window.twttr && window.twttr.ready) {
+      window.twttr.ready(t => cb && cb(t));
+    } else {
+      cb && cb(window.twttr);
+    }
+  };
+  document.body.appendChild(s);
+}; document.body.appendChild(s); }
+function toggleIGEmbed(card, permalink, button){
+  let wrap = card.querySelector('.ig-embed');
+  if(!wrap){
+    const titleRow = card.querySelector('.card-body .title-row');
+    wrap = document.createElement('div'); wrap.className = 'ig-embed';
+    wrap.innerHTML = '<blockquote class="instagram-media" data-instgrm-permalink="'+permalink+'" data-instgrm-version="14" style="margin:0 auto;max-width:540px;width:100%"></blockquote>';
+    titleRow && titleRow.insertAdjacentElement('afterend', wrap);
+    ensureIGScript(()=>{
+      try{
+        if(window.instgrm && window.instgrm.Embeds && typeof window.instgrm.Embeds.process==='function'){
+          window.instgrm.Embeds.process(wrap);
+        }
+      }catch(e){}
+    });
+    if(button){ button.title='Instagramを閉じる'; button.setAttribute('aria-label','Instagramを閉じる'); button.classList.add('open'); button.setAttribute('aria-expanded','true'); }
+  } else {
+    wrap.remove();
+    if(button){ button.title='Instagramを表示'; button.setAttribute('aria-label','Instagramを表示'); button.classList.remove('open'); button.setAttribute('aria-expanded','false'); }
+  }
+}" data-instgrm-version="14" style="margin:0 auto;max-width:540px;width:100%"></blockquote>`;
+    titleRow && titleRow.insertAdjacentElement('afterend', wrap);
+    ensureIGScript(()=>{
+      try{
+        if(window.instgrm && window.instgrm.Embeds && typeof window.instgrm.Embeds.process==='function'){
+          window.instgrm.Embeds.process(wrap);
+        }
+      }catch(e){}
+    });
+    if(button){ button.title='Instagramを閉じる'; button.setAttribute('aria-label','Instagramを閉じる'); button.classList.add('open'); button.setAttribute('aria-expanded','true'); }
+  } else {
+    wrap.remove();
+    if(button){ button.title='Instagramを表示'; button.setAttribute('aria-label','Instagramを表示'); button.classList.remove('open'); button.setAttribute('aria-expanded','false'); }
+  }
+}catch(e){} if(button){ button.title='Instagramを閉じる'; button.setAttribute('aria-label','Instagramを閉じる'); button.classList.add('open'); button.setAttribute('aria-expanded','true'); } } else { wrap.remove(); if(button){ button.title='Instagramを表示'; button.setAttribute('aria-label','Instagramを表示'); button.classList.remove('open'); button.setAttribute('aria-expanded','false'); } } }
+function toggleXEmbed(card, permalink, button){
+  let wrap = card.querySelector('.x-embed');
+  if (!wrap) {
+    const id = getTweetId(permalink);
+    const titleRow = card.querySelector('.card-body .title-row');
+    wrap = document.createElement('div');
+    wrap.className = 'x-embed ig-embed';
+    titleRow && titleRow.insertAdjacentElement('afterend', wrap);
+
+    ensureXScript(twttr => {
+      if (id && twttr && twttr.widgets) {
+        twttr.widgets.createTweet(id, wrap, { align: 'center', dnt: true })
+          .then(() => {
+            if (button){
+              button.title='Xを閉じる';
+              button.setAttribute('aria-label','Xを閉じる');
+              button.classList.add('open');
+              button.setAttribute('aria-expanded','true');
+            }
+          })
+          .catch(showXMock);
+      } else {
+        showXMock();
+      }
+    });
+
+    function showXMock(){
+      wrap.innerHTML = '<div style="padding:12px;border:1px dashed #aaa;border-radius:8px;background:#fff;font-size:13px">この環境ではツイートのプレビューを描画できません。<br><a href="'+permalink+'" target="_blank" rel="noopener">投稿をXで開く</a></div>';
+      if (button){
+        button.title='Xを閉じる';
+        button.setAttribute('aria-label','Xを閉じる');
+        button.classList.add('open');
+        button.setAttribute('aria-expanded','true');
+      }
+    }
+  } else {
+    wrap.remove();
+    if (button){
+      button.title='Xを表示';
+      button.setAttribute('aria-label','Xを表示');
+      button.classList.remove('open');
+      button.setAttribute('aria-expanded','false');
+    }
+  }
+})
+          .then(() => {
+            if (button){
+              button.title='Xを閉じる';
+              button.setAttribute('aria-label','Xを閉じる');
+              button.classList.add('open');
+              button.setAttribute('aria-expanded','true');
+            }
+          })
+          .catch(showXMock);
+      } else {
+        showXMock();
+      }
+    });
+
+    function showXMock(){
+      wrap.innerHTML = `<div style="padding:12px;border:1px dashed #aaa;border-radius:8px;background:#fff;font-size:13px">`+
+                       `この環境ではツイートのプレビューを描画できません。<br>`+
+                       `<a href="${permalink}" target="_blank" rel="noopener">投稿をXで開く</a></div>`;
+      if (button){
+        button.title='Xを閉じる';
+        button.setAttribute('aria-label','Xを閉じる');
+        button.classList.add('open');
+        button.setAttribute('aria-expanded','true');
+      }
+    }
+  } else {
+    wrap.remove();
+    if (button){
+      button.title='Xを表示';
+      button.setAttribute('aria-label','Xを表示');
+      button.classList.remove('open');
+      button.setAttribute('aria-expanded','false');
+    }
+  }
+}"></a></blockquote>`; titleRow&&titleRow.insertAdjacentElement('afterend',wrap); ensureXScript(); if(button){ button.title='Xを閉じる'; button.setAttribute('aria-label','Xを閉じる'); button.classList.add('open'); button.setAttribute('aria-expanded','true'); } } else { wrap.remove(); if(button){ button.title='Xを表示'; button.setAttribute('aria-label','Xを表示'); button.classList.remove('open'); button.setAttribute('aria-expanded','false'); } } }
+
+function normalize(s){ return (s||'').toLowerCase(); }
+function getSelectedCats(){ const sel=$('#cat'); if(!sel) return []; return Array.from(sel.selectedOptions).map(o=>o.value).filter(Boolean); }
+function render(){
+  const qEl=$('#q'); const q=normalize(qEl?qEl.value:'');
+  const area=$('#area').value; const catsSelected=getSelectedCats();
+  const ap=$('#appearance').value; const sort=$('#sort').value;
+  let rows=storesData.slice();
+  if(q){ rows=rows.filter(s=> normalize(s.name).includes(q)||normalize(s.area).includes(q)||normalize(s.menu).includes(q)||categoriesOf(s).some(c=>normalize(c).includes(q)) ); }
+  if(area){ rows=rows.filter(s=> getPref(s.area)===area || (Array.isArray(s.branches)&&s.branches.some(b=> getPref(b.area||'')===area )) ); }
+  if(catsSelected.length){ rows=rows.filter(s=>{ const sc=new Set(categoriesOf(s)); return catsSelected.some(c=> sc.has(c)); }); }
+  if(ap==='featured'){ rows=rows.filter(s=> Array.isArray(s.branches)&&s.branches.some(b=> b.featured)); }
+  else if(ap==='other'){ rows=rows.filter(s=> !Array.isArray(s.branches) || !s.branches.some(b=> b.featured)); }
+  rows.sort((a,b)=>{ const da=a.broadcastDate||''; const db=b.broadcastDate||''; return (sort==='asc')? da.localeCompare(db) : db.localeCompare(da); });
+  const list=$('#list'); list.innerHTML=''; for(const s of rows){ list.appendChild(buildCard(s)); }
+  const parts=[]; if(area) parts.push(area); if(catsSelected.length) parts.push('カテゴリ: '+catsSelected.join('・')); if(ap!=='all') parts.push(ap==='featured'?'登場店舗のみ':'その他店舗のみ');
+  $('#summary').textContent = parts.length? `フィルタ: ${parts.join(' / ')}` : '';
+}
+
+(function initFilters(){
+  const prefSet=new Set(), catSet=new Set();
+  storesData.forEach(s=>{ if(s.area) prefSet.add(getPref(s.area)); (s.branches||[]).forEach(b=>{ if(b.area) prefSet.add(getPref(b.area)); }); categoriesOf(s).forEach(c=> catSet.add(c)); });
+  const areaSel=$('#area'); for(const p of Array.from(prefSet).sort()){ const o=document.createElement('option'); o.value=o.textContent=p; areaSel.appendChild(o); }
+  const catSel=$('#cat'); const menu=$('#catFilter .multi-menu'); const labelEl=$('#catFilter .multi-trigger .label');
+  for(const c of Array.from(catSet).sort()){
+    const o=document.createElement('option'); o.value=c; o.textContent=c; catSel.appendChild(o);
+    const row=document.createElement('label'); row.className='opt'; row.innerHTML=`<input type="checkbox" value="${esc(c)}"> <span>${esc(c)}</span>`; menu.appendChild(row);
+  }
+  const trigger=$('#catFilter .multi-trigger');
+  trigger.addEventListener('click',()=>{ const root=$('#catFilter'); const open=!root.classList.contains('open'); root.classList.toggle('open',open); menu.hidden=!open; trigger.setAttribute('aria-expanded',String(open)); });
+  document.addEventListener('click',e=>{ const root=$('#catFilter'); if(!root.contains(e.target)){ root.classList.remove('open'); menu.hidden=true; trigger.setAttribute('aria-expanded','false'); } });
+  menu.addEventListener('change',()=>{ Array.from(catSel.options).forEach(o=> o.selected=false); const checked=Array.from(menu.querySelectorAll('input[type="checkbox"]:checked')).map(i=> i.value); for(const o of Array.from(catSel.options)){ if(checked.includes(o.value)) o.selected=true; } labelEl.textContent=checked.length? ('カテゴリ: '+checked.join('・')) : '（すべてのカテゴリ）'; render(); });
+})();
+
+const qInput=$('#q'); if(qInput) qInput.addEventListener('input', render);
+$('#area').addEventListener('change', render);
+$('#cat').addEventListener('change', render);
+$('#appearance').addEventListener('change', render);
+$('#sort').addEventListener('change', render);
+
+(function(){ const btn=$('#searchToggle'); const wrap=$('#searchWrap'); if(!btn||!wrap) return; btn.addEventListener('click',()=>{ const open=wrap.hasAttribute('hidden'); if(open){ wrap.removeAttribute('hidden'); btn.setAttribute('aria-expanded','true'); const q=$('#q'); q&&q.focus(); } else { wrap.setAttribute('hidden',''); btn.setAttribute('aria-expanded','false'); } }); })();
+
+render();
+
+window.addEventListener('load',()=>{ if(location.hash){ const el=$(location.hash); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); } });
+
+</script>
+</body>
+</html>
