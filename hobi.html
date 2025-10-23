@@ -149,7 +149,22 @@ window.__DEV_TESTS__ = false;
 //   branches:[{name:'◯◯本店',area:'都道府県・市区',url:'#',featured:true},{name:'△△店',area:'都道府県・市区',url:'#',featured:false}]
 // }
 const storesData=[
-  {id:'toybox',name:'トイ・ボックス',area:'東京・三ノ輪',broadcastDate:'2025-04-20',categories:['ラーメン'],menu:'醤油ラーメン',site:'https://toybox20131215.web.fc2.com/',sns:[{label:'X(Twitter)',url:'https://x.com/toybox1215'}],reserve:[],branches:[{name:'三ノ輪本店',area:'東京・三ノ輪',url:'#',featured:True}]}
+  {id:'toybox',name:'トイ・ボックス',area:'東京・三ノ輪',broadcastDate:'2025-04-20',categories:['ラーメン'],menu:'醤油ラーメン',site:'https://toybox20131215.web.fc2.com/',sns:[{label:'X(Twitter)',url:'https://x.com/toybox1215'}],reserve:[{label:'食べログ',url:'https://tabelog.com/tokyo/A1324/A132401/13162973/'}],branches:[{name:'トイ・ボックス',area:'東京・三ノ輪',url:'https://maps.app.goo.gl/m8xLcoEttn6sab9o9',featured:true}]},
+  {id:'sushitou',name:'鮨十',area:'東京・西麻布',broadcastDate:'2024-09-22',categories:['海鮮','丼'],menu:'イクラとウニの贅沢丼',site:'https://www.sushi-tou.com/',sns:[{label:'Instagram',url:'https://www.instagram.com/sushi_tou/?hl=ja'}],reserve:[{label:'食べログ',url:'https://tabelog.com/tokyo/A1307/A130701/13186101/'}],branches:[{name:'鮨十',area:'東京・西麻布',url:'https://maps.app.goo.gl/Kd9zJm7quJy7hmrr7?g_st=ipc',featured:true}]},
+  {id:'ryushanghai',name:'龍上海',area:'山梨・赤場',broadcastDate:'2025-04-27',categories:['ラーメン'],menu:'赤湯からみそラーメン',site:'https://ryushanhai.com/',sns:[],reserve:[{label:'食べログ',url:'https://s.tabelog.com/yamagata/A0602/A060202/6000028/'}],
+    branches:[{name:'龍上海赤湯本店',area:'山梨・赤場',url:'https://maps.app.goo.gl/YmPADekC9dfJS7vd6?g_st=ipc',featured:true},
+      {name:'米沢店',area:'山梨・米沢',url:'https://maps.app.goo.gl/EH8bTYP8dGUmSqrs9?g_st=ipc',featured:false},
+      {name:'栄町支店',area:'山梨・栄町',url:'https://maps.app.goo.gl/xN8c8A2oayeqcFMz7?g_st=ipc',featured:false},
+      {name:'山大医学部前店',area:'山梨・桜田南',url:'https://maps.app.goo.gl/UD43agDHvv3HMNAj8?g_st=ipc',featured:false},
+      {name:'横浜店（新横浜ラーメン博物館内）​',area:'神奈川・横浜',url:'https://maps.app.goo.gl/UbcnPqVVr7LnGGts5?g_st=ipc',featured:false},
+      {name:'東根店',area:'山梨・中央東',url:'https://maps.app.goo.gl/7VW5tgG7iFQ7dLpp9?g_st=ipc',featured:false},
+      {name:'鶴岡店',area:'山梨・日出',url:'https://maps.app.goo.gl/pj7gW2GF8NDWHV3UA?g_st=ipc',featured:false}
+    ]},
+  {id:'maruchon',name:'マルチョンラーメン',area:'鹿児島・志布志',broadcastDate:'2025-05-11',categories:['ラーメン'],menu:'ラーメン',site:'https://maruchonramen.co.jp/',sns:[{label:'Instagram',url:'https://www.instagram.com/maruchon_ramen_official/'}],reserve:[{label:'食べログ',url:'https://s.tabelog.com/yamagata/A0602/A060202/6000028/'}],
+    branches:[{name:'志布志本店',area:'鹿児島・志布志',url:'https://maps.app.goo.gl/1Gf5UQQsMQxW6RnH8',featured:true},
+      {name:'鹿屋店',area:'鹿児島・富山',url:'https://maps.app.goo.gl/AtMkPxTYKXFz6PU97',featured:false}
+    ]},
+  {id:'maikagura',name:'らーめんMAIKAGURA',area:'東京・千歳船橋',broadcastDate:'2025-06-22',categories:['ラーメン'],menu:'白トリュフオイル香る鶏白湯麺',site:'',sns:[{label:'Instagram',url:'https://www.instagram.com/maikagura_japan/?igsh=aXdycGdxemtjend4#'},{label:'X(Twitter)',url:'https://x.com/maikagurajapan?s=21'}],reserve:[{label:'食べログ',url:'https://tabelog.com/tokyo/A1318/A131813/13218425/'}],branches:[{name:'らーめんMAIKAGURA',area:'東京・千歳船橋',url:'https://maps.app.goo.gl/qvTd4zCZGhFq8Mdn8',featured:true}]}
 ];
 
 const $=(s,r=document)=>r.querySelector(s);
