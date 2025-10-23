@@ -17,11 +17,17 @@
   .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:9999px;border:none;background:#ffffff;cursor:pointer;margin-left:8px;transition:transform .08s ease}
   .icon-btn:hover{transform:translateY(1px)}
   .icon-btn:active{transform:translateY(2px)}
-  .icon-btn svg{width:16px;height:16px}
-  .icon-btn.search svg{fill:var(--ink)}
-  .search-wrap{margin-top:8px}
-  .search-wrap[hidden]{display:none}
-  .search-wrap input[type="search"]{width:100%;background:#fff;border:0;border-radius:12px;padding:10px 12px;font-size:14px;outline:none}
+  .icon-btn.share{color:var(--accent)} .icon-btn.share svg,.icon-btn.share svg *{fill:currentColor;stroke:currentColor;stroke-width:2}
+  .icon-btn.search{color:var(--ink)} .icon-btn.search svg,.icon-btn.search svg *{fill:currentColor;stroke:currentColor;stroke-width:2}
+  .search-wrap{display:none}
+  .search-control{display:flex;align-items:center;gap:8px}
+  .search-control[aria-expanded="false"] .search-pill{width:36px}
+  .search-pill{display:flex;align-items:center;background:#fff;border-radius:9999px;overflow:hidden;transition:width .2s ease,box-shadow .2s ease}
+  .search-pill:focus-within{box-shadow:0 4px 12px rgba(0,0,0,.08)}
+  .search-pill .icon-btn{margin:0;width:36px;height:36px;background:transparent}
+  .search-pill input{border:0;outline:none;width:0;padding:0;font-size:14px;transition:width .2s ease,padding .2s ease}
+  .search-control.open .search-pill{width:min(420px,60vw)}
+  .search-control.open .search-pill input{width:100%;padding:8px 12px}
 
   .controls{display:grid;grid-template-columns:1fr;gap:10px}
   .controls .row{display:flex;gap:8px;flex-wrap:wrap}
@@ -58,7 +64,8 @@
   .ig-embed[hidden]{display:none !important;padding:0;margin:0}
 
   .card-body{padding:12px}
-  .title-row{display:flex;align-items:center;justify-content:flex-start;gap:8px;min-height:var(--title-min-h)}
+  .title-row{display:flex;align-items:center;justify-content:flex-start;gap:8px;min-height:var(--title-min-h);padding-right:64px} 
+  .title-row .icon-btn{flex:0 0 auto}
   .name{margin:0;flex:0 1 auto;font-weight:700}
   .meta{color:var(--muted);font-size:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px}
   .cat{font-size:11px;line-height:1;padding:5px 10px;border-radius:9999px;background:#fff;color:var(--ink);border:0.8px solid var(--ink)}
@@ -71,8 +78,8 @@
   .btn.hp{background:var(--accent);color:#fff}
   .btn.igB{background:linear-gradient(45deg,#f58529,#dd2a7b 35%,#8134af 65%,#515bd4);color:#fff}
   .btn.xB{background:linear-gradient(180deg,#1a1a1a,#2a1f2a);color:#fff}
-  .btn.rv{background:#ff9e00;color:#fff} /* 食べログ系カラー */
-  .btn.store{background:#e8f2ff;color:#0b1220} /* 店舗一覧（同列ボタン） */
+  .btn.rv{background:#ff9e00;color:#fff} 
+  .btn.store{background:#e8f2ff;color:#0b1220} 
 
   .stores{padding:0 12px 12px}
   .stores-toggle{appearance:none;background:none;border:none;color:var(--ink);font-size:13px;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
@@ -91,13 +98,15 @@
   <header>
     <div class="wrap">
       <div class="titlebar">
-        <h1>ご褒美グルメ</h1>
-        <button id="searchToggle" class="icon-btn search" aria-label="検索" aria-expanded="false" title="検索">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3a7 7 0 105.29 12.29l4.2 4.2 1.42-1.42-4.2-4.2A7 7 0 0010 3zm0 2a5 5 0 110 10A5 5 0 0110 5z"/></svg>
-        </button>
-      </div>
-      <div id="searchWrap" class="search-wrap" hidden>
-        <input id="q" type="search" placeholder="店名・エリア・メニューを検索"/>
+        <h1>お店一覧（Instagram/X プレビューは模擬表示）</h1>
+        <div id="searchCtl" class="search-control" aria-expanded="false">
+          <div class="search-pill">
+            <button id="searchToggle" class="icon-btn search" aria-label="検索" title="検索">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3a7 7 0 105.29 12.29l4.2 4.2 1.42-1.42-4.2-4.2A7 7 0 0010 3zm0 2a5 5 0 110 10A5 5 0 0110 5z"/></svg>
+            </button>
+            <input id="q" type="search" placeholder="店名・エリア・メニューを検索"/>
+          </div>
+        </div>
       </div>
       <div class="controls">
         <div class="row">
@@ -130,7 +139,7 @@
   </main>
 
 <script>
-window.__DEV_TESTS__ = false;
+window.__DEV_TESTS__ = false; 
 
 // {
 //   id:'unique-id', name:'店名', area:'都道府県・市区', broadcastDate:'YYYY-MM-DD',
@@ -140,17 +149,7 @@ window.__DEV_TESTS__ = false;
 //   branches:[{name:'◯◯本店',area:'都道府県・市区',url:'#',featured:true},{name:'△△店',area:'都道府県・市区',url:'#',featured:false}]
 // }
 const storesData=[
-  {id:'toybox',name:'トイ・ボックス',area:'東京・三ノ輪',broadcastDate:'2025-04-20',categories:['ラーメン'],menu:'醤油ラーメン',site:'https://toybox20131215.web.fc2.com/',sns:[{label:'X(Twitter)',url:'https://x.com/toybox1215'}],reserve:[{label:'食べログ',url:'https://tabelog.com/tokyo/A1324/A132401/13162973/'}],branches:[{name:'トイ・ボックス',area:'東京・三ノ輪',url:'https://maps.app.goo.gl/m8xLcoEttn6sab9o9',featured:true}]},
-  {id:'sushitou',name:'鮨十',area:'東京・西麻布',broadcastDate:'2024-09-22',categories:['海鮮','丼'],menu:'イクラとウニの贅沢丼',site:'https://www.sushi-tou.com/',sns:[{label:'Instagram',url:'https://www.instagram.com/sushi_tou/?hl=ja'}],reserve:[{label:'食べログ',url:'https://tabelog.com/tokyo/A1307/A130701/13186101/'}],branches:[{name:'鮨十',area:'東京・西麻布',url:'https://maps.app.goo.gl/Kd9zJm7quJy7hmrr7?g_st=ipc',featured:true}]},
-  {id:'ryushanghai',name:'龍上海',area:'山梨・赤場',broadcastDate:'2025-04-27',categories:['ラーメン'],menu:'赤湯からみそラーメン',site:'https://ryushanhai.com/',sns:[],reserve:[{label:'食べログ',url:'https://s.tabelog.com/yamagata/A0602/A060202/6000028/'}],
-    branches:[{name:'龍上海赤湯本店',area:'山梨・赤場',url:'https://maps.app.goo.gl/YmPADekC9dfJS7vd6?g_st=ipc',featured:true},
-      {name:'米沢店',area:'山梨・米沢',url:'https://maps.app.goo.gl/EH8bTYP8dGUmSqrs9?g_st=ipc',featured:false},
-      {name:'栄町支店',area:'山梨・栄町',url:'https://maps.app.goo.gl/xN8c8A2oayeqcFMz7?g_st=ipc',featured:false},
-      {name:'山大医学部前店',area:'山梨・桜田南',url:'https://maps.app.goo.gl/UD43agDHvv3HMNAj8?g_st=ipc',featured:false},
-      {name:'横浜店（新横浜ラーメン博物館内）​',area:'神奈川・横浜',url:'https://maps.app.goo.gl/UbcnPqVVr7LnGGts5?g_st=ipc',featured:false},
-      {name:'東根店',area:'山梨・中央東',url:'https://maps.app.goo.gl/7VW5tgG7iFQ7dLpp9?g_st=ipc',featured:false},
-      {name:'鶴岡店',area:'山梨・日出',url:'https://maps.app.goo.gl/pj7gW2GF8NDWHV3UA?g_st=ipc',featured:false}
-    ]}
+  {id:'toybox',name:'トイ・ボックス',area:'東京・三ノ輪',broadcastDate:'2025-04-20',categories:['ラーメン'],menu:'醤油ラーメン',site:'https://toybox20131215.web.fc2.com/',sns:[{label:'X(Twitter)',url:'https://x.com/toybox1215'}],reserve:[],branches:[{name:'三ノ輪本店',area:'東京・三ノ輪',url:'#',featured:false}]}
 ];
 
 const $=(s,r=document)=>r.querySelector(s);
@@ -159,21 +158,6 @@ const esc=(s='')=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"
 function categoriesOf(s){ if(Array.isArray(s.categories)) return s.categories.slice(); if(typeof s.category==='string'&&s.category) return [s.category]; return []; }
 function getPref(a){ return (a||'').split('・')[0]; }
 function linkBtn(label,href){ const a=document.createElement('a'); a.href=href||'#'; a.target=(href&&href.startsWith('http'))? '_blank':'_self'; a.rel='noopener'; a.className='btn'; a.textContent=label; return a; }
-
-function getTweetId(url=''){
-  const m = url.match(/status\/(\d+)/) || url.match(/\/(\d{10,})/);
-  return m ? m[1] : null;
-}
-
-function getTweetId(url=''){
-  try{
-    const u = String(url);
-    const afterStatus = u.split('status/')[1];
-    const after = afterStatus ? afterStatus : u.split('?')[0];
-    const id = (after||'').split(/[/?#&]/)[0];
-    return (/^\d{10,}$/).test(id) ? id : null;
-  }catch(e){ return null; }
-}
 
 function buildStoresSection(s){
   if(!Array.isArray(s.branches)||!s.branches.length) return null;
@@ -198,7 +182,7 @@ function buildCard(s){
   const body=document.createElement('div'); body.className='card-body';
   const titleRow=document.createElement('div'); titleRow.className='title-row';
   const h3=document.createElement('h3'); h3.className='name'; h3.textContent=s.name||'（店名未入力）'; titleRow.appendChild(h3);
-  const share=document.createElement('button'); share.className='icon-btn'; share.setAttribute('aria-label','共有'); share.title='共有';
+  const share=document.createElement('button'); share.className='icon-btn share'; share.setAttribute('aria-label','共有'); share.title='共有';
   share.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l4 4h-3v7h-2V6H8l4-4zm8 9v9a2 2 0 01-2 2H6a2 2 0 01-2-2v-9h2v9h12v-9h2z"/></svg>';
   share.addEventListener('click',async()=>{ const url=new URL(location.href); url.hash=s.id; const title=s.name||'お店情報'; try{ if(navigator.share){ await navigator.share({title,url:url.toString()}); } else { await navigator.clipboard.writeText(url.toString()); share.classList.add('ok'); setTimeout(()=>share.classList.remove('ok'),900);} }catch(e){} });
   titleRow.appendChild(share);
@@ -212,14 +196,21 @@ function buildCard(s){
 
   if(s.menu){ const m=document.createElement('div'); m.className='menu'; m.textContent=s.menu; body.appendChild(m); }
 
+  const storesSec = buildStoresSection(s);
   const act=document.createElement('div'); act.className='actions';
   if(s.site){ const hp=linkBtn('公式HP', s.site); hp.classList.add('hp'); act.appendChild(hp); }
   if(Array.isArray(s.sns)) for(const sn of s.sns){ if(sn?.url){ const b=linkBtn(sn.label||'SNS', sn.url); const L=(sn.label||'').toLowerCase(); if(L.includes('insta')){ b.classList.add('igB'); } else if(L==='x'||L.includes('twitter')){ b.classList.add('xB'); b.textContent='𝕏'; } act.appendChild(b);} }
   if(Array.isArray(s.reserve)) for(const r of s.reserve){ if(r?.url){ const rb=linkBtn(r.label||'予約', r.url); rb.classList.add('rv'); act.appendChild(rb);} }
-  const storesSec=buildStoresSection(s);
   if(storesSec){
     const sb=document.createElement('button'); sb.type='button'; sb.className='btn store'; sb.textContent='📍店舗一覧';
-    sb.addEventListener('click',()=>{ const content=storesSec.querySelector('.stores-content'); const open=content.hidden; content.hidden=!open; });
+    sb.setAttribute('aria-expanded','false');
+    sb.addEventListener('click',()=>{
+      const content=storesSec.querySelector('.stores-content');
+      const open=content.hidden;
+      content.hidden=!open;
+      storesSec.classList.toggle('open', open);
+      sb.setAttribute('aria-expanded', String(open));
+    });
     act.appendChild(sb);
   }
   body.appendChild(act);
@@ -237,146 +228,9 @@ function buildCard(s){
 
 let igScriptLoaded=false;
 function ensureIGScript(){ if(igScriptLoaded) return; const s=document.createElement('script'); s.async=true; s.src='https://www.instagram.com/embed.js'; s.onload=()=>{igScriptLoaded=true}; document.body.appendChild(s); }
-function ensureXScript(cb){
-  if (window.twttr && window.twttr.widgets) { cb && cb(window.twttr); return; }
-  const s = document.createElement('script');
-  s.async = true;
-  s.src = 'https://platform.twitter.com/widgets.js';
-  s.onload = () => {
-    if (window.twttr && window.twttr.ready) {
-      window.twttr.ready(t => cb && cb(t));
-    } else {
-      cb && cb(window.twttr);
-    }
-  };
-  document.body.appendChild(s);
-}
-  const s = document.createElement('script');
-  s.async = true;
-  s.src = 'https://platform.twitter.com/widgets.js';
-  s.onload = () => {
-    if (window.twttr && window.twttr.ready) {
-      window.twttr.ready(t => cb && cb(t));
-    } else {
-      cb && cb(window.twttr);
-    }
-  };
-  document.body.appendChild(s);
-}; document.body.appendChild(s); }
-function toggleIGEmbed(card, permalink, button){
-  let wrap = card.querySelector('.ig-embed');
-  if(!wrap){
-    const titleRow = card.querySelector('.card-body .title-row');
-    wrap = document.createElement('div'); wrap.className = 'ig-embed';
-    wrap.innerHTML = '<blockquote class="instagram-media" data-instgrm-permalink="'+permalink+'" data-instgrm-version="14" style="margin:0 auto;max-width:540px;width:100%"></blockquote>';
-    titleRow && titleRow.insertAdjacentElement('afterend', wrap);
-    ensureIGScript(()=>{
-      try{
-        if(window.instgrm && window.instgrm.Embeds && typeof window.instgrm.Embeds.process==='function'){
-          window.instgrm.Embeds.process(wrap);
-        }
-      }catch(e){}
-    });
-    if(button){ button.title='Instagramを閉じる'; button.setAttribute('aria-label','Instagramを閉じる'); button.classList.add('open'); button.setAttribute('aria-expanded','true'); }
-  } else {
-    wrap.remove();
-    if(button){ button.title='Instagramを表示'; button.setAttribute('aria-label','Instagramを表示'); button.classList.remove('open'); button.setAttribute('aria-expanded','false'); }
-  }
-}" data-instgrm-version="14" style="margin:0 auto;max-width:540px;width:100%"></blockquote>`;
-    titleRow && titleRow.insertAdjacentElement('afterend', wrap);
-    ensureIGScript(()=>{
-      try{
-        if(window.instgrm && window.instgrm.Embeds && typeof window.instgrm.Embeds.process==='function'){
-          window.instgrm.Embeds.process(wrap);
-        }
-      }catch(e){}
-    });
-    if(button){ button.title='Instagramを閉じる'; button.setAttribute('aria-label','Instagramを閉じる'); button.classList.add('open'); button.setAttribute('aria-expanded','true'); }
-  } else {
-    wrap.remove();
-    if(button){ button.title='Instagramを表示'; button.setAttribute('aria-label','Instagramを表示'); button.classList.remove('open'); button.setAttribute('aria-expanded','false'); }
-  }
-}catch(e){} if(button){ button.title='Instagramを閉じる'; button.setAttribute('aria-label','Instagramを閉じる'); button.classList.add('open'); button.setAttribute('aria-expanded','true'); } } else { wrap.remove(); if(button){ button.title='Instagramを表示'; button.setAttribute('aria-label','Instagramを表示'); button.classList.remove('open'); button.setAttribute('aria-expanded','false'); } } }
-function toggleXEmbed(card, permalink, button){
-  let wrap = card.querySelector('.x-embed');
-  if (!wrap) {
-    const id = getTweetId(permalink);
-    const titleRow = card.querySelector('.card-body .title-row');
-    wrap = document.createElement('div');
-    wrap.className = 'x-embed ig-embed';
-    titleRow && titleRow.insertAdjacentElement('afterend', wrap);
-
-    ensureXScript(twttr => {
-      if (id && twttr && twttr.widgets) {
-        twttr.widgets.createTweet(id, wrap, { align: 'center', dnt: true })
-          .then(() => {
-            if (button){
-              button.title='Xを閉じる';
-              button.setAttribute('aria-label','Xを閉じる');
-              button.classList.add('open');
-              button.setAttribute('aria-expanded','true');
-            }
-          })
-          .catch(showXMock);
-      } else {
-        showXMock();
-      }
-    });
-
-    function showXMock(){
-      wrap.innerHTML = '<div style="padding:12px;border:1px dashed #aaa;border-radius:8px;background:#fff;font-size:13px">この環境ではツイートのプレビューを描画できません。<br><a href="'+permalink+'" target="_blank" rel="noopener">投稿をXで開く</a></div>';
-      if (button){
-        button.title='Xを閉じる';
-        button.setAttribute('aria-label','Xを閉じる');
-        button.classList.add('open');
-        button.setAttribute('aria-expanded','true');
-      }
-    }
-  } else {
-    wrap.remove();
-    if (button){
-      button.title='Xを表示';
-      button.setAttribute('aria-label','Xを表示');
-      button.classList.remove('open');
-      button.setAttribute('aria-expanded','false');
-    }
-  }
-})
-          .then(() => {
-            if (button){
-              button.title='Xを閉じる';
-              button.setAttribute('aria-label','Xを閉じる');
-              button.classList.add('open');
-              button.setAttribute('aria-expanded','true');
-            }
-          })
-          .catch(showXMock);
-      } else {
-        showXMock();
-      }
-    });
-
-    function showXMock(){
-      wrap.innerHTML = `<div style="padding:12px;border:1px dashed #aaa;border-radius:8px;background:#fff;font-size:13px">`+
-                       `この環境ではツイートのプレビューを描画できません。<br>`+
-                       `<a href="${permalink}" target="_blank" rel="noopener">投稿をXで開く</a></div>`;
-      if (button){
-        button.title='Xを閉じる';
-        button.setAttribute('aria-label','Xを閉じる');
-        button.classList.add('open');
-        button.setAttribute('aria-expanded','true');
-      }
-    }
-  } else {
-    wrap.remove();
-    if (button){
-      button.title='Xを表示';
-      button.setAttribute('aria-label','Xを表示');
-      button.classList.remove('open');
-      button.setAttribute('aria-expanded','false');
-    }
-  }
-}"></a></blockquote>`; titleRow&&titleRow.insertAdjacentElement('afterend',wrap); ensureXScript(); if(button){ button.title='Xを閉じる'; button.setAttribute('aria-label','Xを閉じる'); button.classList.add('open'); button.setAttribute('aria-expanded','true'); } } else { wrap.remove(); if(button){ button.title='Xを表示'; button.setAttribute('aria-label','Xを表示'); button.classList.remove('open'); button.setAttribute('aria-expanded','false'); } } }
+function ensureXScript(){ if(window.twttr&&window.twttr.widgets) return; const s=document.createElement('script'); s.async=true; s.src='https://platform.twitter.com/widgets.js'; s.onload=()=>{ window.twttr&&window.twttr.widgets&&window.twttr.widgets.load(); }; document.body.appendChild(s); }
+function toggleIGEmbed(card,permalink,button){ let wrap=card.querySelector('.ig-embed'); if(!wrap){ const titleRow=card.querySelector('.card-body .title-row'); const newWrap=document.createElement('div'); newWrap.className='ig-embed'; const bq=document.createElement('blockquote'); bq.className='instagram-media'; bq.setAttribute('data-instgrm-permalink',permalink); bq.setAttribute('data-instgrm-version','14'); bq.style.margin='0 auto'; bq.style.maxWidth='540px'; bq.style.width='100%'; newWrap.appendChild(bq); titleRow&&titleRow.insertAdjacentElement('afterend',newWrap); ensureIGScript(); try{ if(window.instgrm&&window.instgrm.Embeds&&typeof window.instgrm.Embeds.process==='function') window.instgrm.Embeds.process(newWrap); }catch(e){} if(button){ button.title='Instagramを閉じる'; button.setAttribute('aria-label','Instagramを閉じる'); button.classList.add('open'); button.setAttribute('aria-expanded','true'); } } else { wrap.remove(); if(button){ button.title='Instagramを表示'; button.setAttribute('aria-label','Instagramを表示'); button.classList.remove('open'); button.setAttribute('aria-expanded','false'); } } }
+function toggleXEmbed(card,permalink,button){ let wrap=card.querySelector('.x-embed'); if(!wrap){ const titleRow=card.querySelector('.card-body .title-row'); wrap=document.createElement('div'); wrap.className='x-embed ig-embed'; wrap.innerHTML=`<blockquote class="twitter-tweet"><a href="${permalink}"></a></blockquote>`; titleRow&&titleRow.insertAdjacentElement('afterend',wrap); ensureXScript(); if(button){ button.title='Xを閉じる'; button.setAttribute('aria-label','Xを閉じる'); button.classList.add('open'); button.setAttribute('aria-expanded','true'); } } else { wrap.remove(); if(button){ button.title='Xを表示'; button.setAttribute('aria-label','Xを表示'); button.classList.remove('open'); button.setAttribute('aria-expanded','false'); } } }
 
 function normalize(s){ return (s||'').toLowerCase(); }
 function getSelectedCats(){ const sel=$('#cat'); if(!sel) return []; return Array.from(sel.selectedOptions).map(o=>o.value).filter(Boolean); }
@@ -417,10 +271,21 @@ $('#cat').addEventListener('change', render);
 $('#appearance').addEventListener('change', render);
 $('#sort').addEventListener('change', render);
 
-(function(){ const btn=$('#searchToggle'); const wrap=$('#searchWrap'); if(!btn||!wrap) return; btn.addEventListener('click',()=>{ const open=wrap.hasAttribute('hidden'); if(open){ wrap.removeAttribute('hidden'); btn.setAttribute('aria-expanded','true'); const q=$('#q'); q&&q.focus(); } else { wrap.setAttribute('hidden',''); btn.setAttribute('aria-expanded','false'); } }); })();
-
+(function(){
+  const ctl=document.getElementById('searchCtl');
+  const btn=document.getElementById('searchToggle');
+  const q=document.getElementById('q');
+  if(!ctl||!btn||!q) return;
+  btn.addEventListener('click',()=>{
+    const open=!ctl.classList.contains('open');
+    ctl.classList.toggle('open',open);
+    ctl.setAttribute('aria-expanded',String(open));
+    if(open){ setTimeout(()=>q.focus(),10); }
+  });
+  q.addEventListener('keydown',e=>{ if(e.key==='Escape'){ ctl.classList.remove('open'); ctl.setAttribute('aria-expanded','false'); q.blur(); } });
+  q.addEventListener('blur',()=>{ if(!q.value){ ctl.classList.remove('open'); ctl.setAttribute('aria-expanded','false'); } });
+})();
 render();
-
 window.addEventListener('load',()=>{ if(location.hash){ const el=$(location.hash); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); } });
 
 </script>
