@@ -230,7 +230,7 @@ function buildCard(s){
   if(Array.isArray(s.sns)) for(const sn of s.sns){ if(sn?.url){ const b=linkBtn(sn.label||'SNS', sn.url); const L=(sn.label||'').toLowerCase(); if(L.includes('insta')){ b.classList.add('igB'); } else if(L==='x'||L.includes('twitter')){ b.classList.add('xB'); b.textContent='𝕏'; } act.appendChild(b);} }
   if(Array.isArray(s.reserve)) for(const r of s.reserve){ if(r?.url){ const rb=linkBtn(r.label||'予約', r.url); rb.classList.add('rv'); act.appendChild(rb);} }
   if(storesSec){
-    const sb=document.createElement('button'); sb.type='button'; sb.className='btn store'; sb.textContent='📍店舗一覧';
+    const sb=document.createElement('button'); sb.type='button'; sb.className='btn store'; sb.textContent='📍店舗';
     sb.setAttribute('aria-expanded','false');
     sb.addEventListener('click',()=>{
       const content=storesSec.querySelector('.stores-content');
