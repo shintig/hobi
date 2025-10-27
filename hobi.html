@@ -227,7 +227,7 @@ function buildCard(s){
   const titleRow=document.createElement('div'); titleRow.className='title-row';
   const h3=document.createElement('h3'); h3.className='name'; h3.textContent=s.name||'（店名未入力）'; titleRow.appendChild(h3);
   const share=document.createElement('button'); share.className='icon-btn share'; share.setAttribute('aria-label','共有'); share.title='共有';
-  share.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l4 4h-3v7h-2V6H8l4-4zm8 9v9a2 2 0 01-2 2H6a2 2 0 01-2-2v-9h2v9h12v-9h2z"/></svg>';
+  share.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l4 4h-3v7h-2V6H8l4-4zm8 9v9a2 2 0 01-2 2H6a2 2 0 01-2-2v-9h2v9h12v-9h2z"/></svg>';
   share.addEventListener('click',async()=>{ const url=new URL(location.href); url.hash=s.id; const title=s.name||'お店情報'; try{ if(navigator.share){ await navigator.share({title,url:url.toString()}); } else { await navigator.clipboard.writeText(url.toString()); share.classList.add('ok'); setTimeout(()=>share.classList.remove('ok'),900);} }catch(e){} });
   titleRow.appendChild(share);
   body.appendChild(titleRow);
